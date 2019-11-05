@@ -199,9 +199,9 @@ int alt3_key_pressed(void)
 void light(int set)
 {
 	if (set)
-		__gpio_set_pin(GPIOC, 31);
+		__gpio_set_pin(GPIOD, 31);
 	else
-		__gpio_clear_pin(GPIOC, 31);
+		__gpio_clear_pin(GPIOD, 31);
 }
 #endif
 
@@ -233,22 +233,49 @@ void board_init(void)
 	__gpio_disable_pull_mask(GPIOC, 0x07000000);
 
 	/* MMC pins */
-	__gpio_as_func_mask(GPIOC, 0x00003f00, 0);
-	__gpio_disable_pull_mask(GPIOC, 0x00003f00);
+	__gpio_as_func_mask(GPIOD, 0x00003f00, 0);
+	__gpio_disable_pull_mask(GPIOD, 0x00003f00);
 
 #ifdef USE_SERIAL
-	__gpio_as_func_mask(GPIOC, 0x06000000, 1);
+	__gpio_as_func_mask(GPIOD, 0x06000000, 1);
 	serial_init();
 #endif
 
 	pll_init();
+	SERIAL_PUTS_ARGI("PLL running at ", __cpm_get_pllout() / 1000000, " MHz.\n");
+
 	sdram_init();
+	if (ram_works()) {
+		SERIAL_PUTS_ARGI("SDRAM running at ", __cpm_get_mclk() / 1000000, " MHz.\n");
+		SERIAL_PUTS_ARGI("SDRAM size is ", get_memory_size() / 1048576, " MiB.\n");
+	} else {
+		SERIAL_PUTS("SDRAM does not work!\n");
+		while (1) {
+			asm volatile("wait\n");
+		}; /* Wait here */
+	}
 
 #ifdef BKLIGHT_ON
-	__gpio_clear_pin(GPIOC, 31);	/* Port 3 pin 31: Backlight PWM  */
-	__gpio_as_output(GPIOC, 31);
+	__gpio_clear_pin(GPIOD, 31);	/* D31: Backlight PWM  */
+	__gpio_as_output(GPIOD, 31);
 #endif
 
 	/* X/A/Y buttons */
 	__gpio_as_input_mask(GPIOC, 0x00080005);
 }
+
+#ifdef USE_NAND
+void nand_wait_ready(void)
+{
+	unsigned int timeout = 10000;
+
+	while (__gpio_get_pin(GPIOC, 30) && timeout--);
+	while (!__gpio_get_pin(GPIOC, 30));
+}
+
+void nand_init(void)
+{
+	/* Optimize the timing of nand */
+	REG_EMC_SMCR1 = 0x094c4400;
+}
+#endif

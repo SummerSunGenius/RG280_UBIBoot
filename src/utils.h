@@ -5,12 +5,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 int strncmp(const char *s1, const char *s2, size_t n);
 
 void *memcpy(void *dest, const void *src, size_t n);
 void *memmove(void *dest, const void *src, size_t n);
-
-uint32_t swap_be32(uint32_t val);
 
 /*
  * Writes the given value to a string as a hexadecimal number.
@@ -25,5 +25,10 @@ void write_hex_digits(unsigned int value, char *last_digit);
 void udelay(unsigned int us);
 
 bool ram_works(void);
+
+inline unsigned int div_round_up(unsigned int nb, unsigned int div)
+{
+	return (nb / div) + !!(nb % div);
+}
 
 #endif /* __UTILS_H__ */

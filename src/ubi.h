@@ -2,13 +2,15 @@
 #ifndef UBI_H
 #define UBI_H
 
+#include <endian.h>
 #include <stdint.h>
 #include <sys/queue.h>
 #include <arpa/inet.h>
 
-#define UBI_EC_HDR_MAGIC ntohl(0x55424923)
-#define UBI_VID_HDR_MAGIC ntohl(0x55424921)
-#define UBI_VOL_TABLE_ID 0x7fffefff
+#define UBI_EC_HDR_MAGIC	be32toh(0x55424923)
+#define UBI_VID_HDR_MAGIC	be32toh(0x55424921)
+
+#define UBI_VOL_TABLE_ID	0x7fffefff
 
 /* The maximum volume name length */
 #define UBI_VOL_NAME_MAX 127
@@ -57,13 +59,14 @@ struct ubi_vol_tbl_record {
 } __attribute__ ((packed));
 
 struct EraseBlock {
-	uint32_t data_addr;
-	uint32_t lnum;
-	uint32_t data_size;
+	uint32_t peb;
+	uint32_t leb;
+	uint64_t sqnum;
+	uint32_t vol_id;
 	SLIST_ENTRY(EraseBlock) next;
 };
 
-int ubi_load_kernel(unsigned char *ld_addr);
+int ubi_load_kernel(unsigned char *ld_addr, void **exec_addr, uint32_t vol_id);
 
 #endif /* UBI_H */
 

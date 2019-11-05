@@ -16,7 +16,7 @@ int strncmp(const char *s1, const char *s2, size_t n)
 	return 0;
 }
 
-void *memcpy(void *dest, const void *src, size_t n)
+void __attribute__((used)) *memcpy(void *dest, const void *src, size_t n)
 {
 	unsigned char *d = dest;
 	const unsigned char *s = src, *e = src + n;
@@ -40,14 +40,6 @@ void *memmove(void *dest, const void *src, size_t n)
 		do { *--d = *--s; } while (s != src);
 		return dest;
 	}
-}
-
-uint32_t swap_be32(uint32_t val)
-{
-	return ((val & 0xFF000000) >> 24)
-	     | ((val & 0x00FF0000) >> 8)
-	     | ((val & 0x0000FF00) << 8)
-	     | ((val & 0x000000FF) << 24);
 }
 
 void write_hex_digits(unsigned int value, char *last_digit)
