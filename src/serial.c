@@ -112,14 +112,9 @@ void serial_puti(unsigned int value)
 	char message[32];
 	unsigned int i;
 
-	if (value) {
-		for (i = 0; (i < sizeof(message)) && value; i++) {
-			message[i] = value % 10;
-			value /= 10;
-		}
-	} else {
-		message[0] = 0;
-		i++;
+	for (i = 0; (i < sizeof(message)) && value; i++) {
+		message[i] = value % 10;
+		value /= 10;
 	}
 
 	for (; i; i--)

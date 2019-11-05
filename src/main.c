@@ -20,6 +20,8 @@
 #include "jz.h"
 #include "utils.h"
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+
 /* Time how long UBIBoot takes to do its job.
  * Uses the JZ4770 OST, so won't work on JZ4740.
  */
@@ -170,7 +172,7 @@ typedef void (*kernel_main)(int, char**, char**, int*) __attribute__((noreturn))
 void c_main(void)
 {
 	void *exec_addr = NULL;
-	int mmc_inited, alt_kernel;
+	int mmc_inited;
 	extern unsigned int _bss_start, _bss_end;
 	unsigned int *ptr;
 
@@ -199,8 +201,6 @@ void c_main(void)
 	return;
 #endif
 
-	alt_kernel = alt_key_pressed();
-
 	/* Tests on JZ4770 show that the data cache lines that contain the boot
 	 * loader are not marked as dirty initially. Therefore, if those cache
 	 * lines are evicted, the data is lost. To avoid that, we load to the
@@ -211,7 +211,7 @@ void c_main(void)
 	mmc_inited = !mmc_init(MMC_ID);
 	if (mmc_inited) {
 		if (mmc_load_kernel(
-				MMC_ID, (void *) (KSEG1 + LD_ADDR), alt_kernel,
+				MMC_ID, (void *) (KSEG1 + LD_ADDR), alt_key_pressed(),
 				&exec_addr) == 1)
 			set_alt_param();
 
@@ -239,13 +239,11 @@ void c_main(void)
 	if (!exec_addr) {
 		nand_init();
 #ifdef USE_UBI
-		if (ubi_load_kernel((void *) (KSEG1 + LD_ADDR),
-				    &exec_addr, alt_kernel)) {
+		if (ubi_load_kernel((void *) (KSEG1 + LD_ADDR))) {
 			SERIAL_PUTS("Unable to boot from NAND.\n");
 			return;
 		} else {
-			if (alt_kernel)
-				set_alt_param();
+			exec_addr = (void *) (KSEG0 + LD_ADDR);
 #ifdef UBI_ROOTFS_MTDNAME
 			kernel_params[PARAM_UBIMTD] = "ubi.mtd=" UBI_ROOTFS_MTDNAME;
 #endif

@@ -23,15 +23,11 @@ NM = $(CROSS_COMPILE)nm
 CFLAGS	:= -Wall -Os -fno-pic -mno-abicalls -mno-check-zero-division -ffreestanding -flto
 CFLAGS	+= $(CFLAGS_all)
 CPPFLAGS := -DBOARD_$(BOARD) -DJZ_VERSION=$(JZ_VERSION)
-LDFLAGS	:= -nostdlib -EL -T ldscripts/target-jz$(JZ_VERSION).ld
-
-ifeq ($(JZ_VERSION)$(STAGE1_ONLY),4770)
-	LDFLAGS += -Wl,--defsym=LOAD_OFFSET=0x200
-endif
+LDFLAGS	:= -nostdlib -EL -T target-$(BOARD).ld
 
 OUTDIR	:= output/$(CONFIG)
 
-OBJS	:= utils.o mmc.o fat.o head.o uimage.o
+OBJS	:= utils.o mmc.o fat.o head.o
 
 ifdef GC_FUNCTIONS
 	CFLAGS += -ffunction-sections
@@ -50,11 +46,6 @@ endif
 ifdef USE_NAND
 	CPPFLAGS += -DUSE_NAND
 	OBJS += nand.o
-ifeq ($(JZ_VERSION),4740)
-	OBJS += bch-jz4740.o
-else
-	OBJS += bch-jz4750.o
-endif
 endif
 
 ifdef USE_UBI

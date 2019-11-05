@@ -79,27 +79,19 @@ static void pll_init(void)
  *   TPC  18
  *
  */
-
-#define SDRAM_CASL		3	/* CAS latency: 2 or 3 */
-#ifdef RS90_V30
-#	define SDRAM_TRAS	50	/* RAS# Active Time (ns) */
-#	define SDRAM_RCD	25	/* RAS# to CAS# Delay (ns) */
-#	define SDRAM_TPC	25	/* RAS# Precharge Time (ns) */
-#	define SDRAM_TREF	7812	/* Refresh period (ns) */
-#else /* RS90_V21 */
-#	define SDRAM_TRAS	42	/* RAS# Active Time (ns) */
-#	define SDRAM_RCD	18	/* RAS# to CAS# Delay (ns) */
-#	define SDRAM_TPC	18	/* RAS# Precharge Time (ns) */
-#	define SDRAM_TREF	15625	/* Refresh period (ns) */
-#endif
-#define SDRAM_TRWL		7	/* Write Latency Time (ns) */
+#define SDRAM_CASL		3		/* CAS latency: 2 or 3 */
+#define SDRAM_TRAS		42		/* RAS# Active Time (ns) */
+#define SDRAM_RCD		18		/* RAS# to CAS# Delay (ns) */
+#define SDRAM_TPC		18		/* RAS# Precharge Time (ns) */
+#define SDRAM_TRWL		7		/* Write Latency Time (ns) */
+#define SDRAM_TREF		15625	/* Refresh period (ns): 4096 refresh cycles/64ms */
 #define SDRAM_BW16		1
-#define SDRAM_BANK40		0
+#define SDRAM_BANK40	0
 #define SDRAM_BANK4		1
 #define SDRAM_ROW0		11
-#define SDRAM_ROW		13
+#define SDRAM_ROW		CFG_SDRAM_ROW
 #define SDRAM_COL0		9
-#define SDRAM_COL		9
+#define SDRAM_COL		CFG_SDRAM_COL
 
 static void sdram_init(void)
 {
@@ -191,12 +183,12 @@ static void sdram_init(void)
 
 int alt_key_pressed(void)
 {
-	return !__gpio_get_pin(GPIOD, 17); /* START button */
+	return 0; /* TODO */
 }
 
 int alt2_key_pressed(void)
 {
-	return !__gpio_get_pin(GPIOC, 12); /* Right shoulder button */
+	return 0; /* TODO */
 }
 
 int alt3_key_pressed(void)
@@ -223,9 +215,10 @@ unsigned int get_memory_size(void)
 void board_init(void)
 {
 #ifdef USE_NAND
-	__gpio_as_func_mask(GPIOC, 0x36300300, 0);
-	__gpio_as_input(GPIOC, 27);
-	__gpio_disable_pull(GPIOC, 27);
+	__gpio_as_func_mask(1, 0x02418000, 0);
+	__gpio_as_func_mask(2, 0x30000000, 0);
+	__gpio_as_input(2, 30);
+	__gpio_disable_pull(2, 30);
 #endif
 
 	/* SDRAM pins */
@@ -262,29 +255,10 @@ void board_init(void)
 	REG_CPM_CLKGR &= ~(1 << 16);
 
 	/* Set divider for the MSC clock */
-	__cpm_set_mscdiv((__cpm_get_pllout2() / 24000000) - 1);
+	__cpm_set_mscdiv((__cpm_get_pllout() / 24000000) - 1);
 
 #ifdef BKLIGHT_ON
 	__gpio_clear_pin(GPIOD, 31);
 	__gpio_as_output(GPIOD, 31);
 #endif
 }
-
-#ifdef USE_NAND
-void nand_wait_ready(void)
-{
-	unsigned int timeout = 10000;
-
-	while (__gpio_get_pin(GPIOC, 27) && timeout--);
-	while (!__gpio_get_pin(GPIOC, 27));
-}
-
-void nand_init(void)
-{
-	REG32(EMC_SMCR1) = (EMC_TAS << EMC_SMCR_TAS_BIT) |
-			   (EMC_TAH << EMC_SMCR_TAH_BIT) |
-			   (EMC_TBP << EMC_SMCR_TBP_BIT) |
-			   (EMC_TAW << EMC_SMCR_TAW_BIT) |
-			   (EMC_STRV << EMC_SMCR_STRV_BIT);
-}
-#endif
